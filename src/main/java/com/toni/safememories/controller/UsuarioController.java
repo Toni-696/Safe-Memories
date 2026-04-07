@@ -1,6 +1,8 @@
 package com.toni.safememories.controller;
 
+import com.toni.safememories.Security.JwtService;
 import com.toni.safememories.dto.LoginRequest;
+import com.toni.safememories.dto.LoginResponse;
 import com.toni.safememories.dto.UsuarioResponse;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.service.UsuarioService;
@@ -16,10 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final JwtService jwtService;
 
-    public UsuarioController(UsuarioService usuarioService){
-        this.usuarioService=usuarioService;
-
+    public UsuarioController(UsuarioService usuarioService, JwtService jwtService) {
+        this.usuarioService = usuarioService;
+        this.jwtService = jwtService;
     }
 
     //Registro de usuario, postmapping es el endpoint /usuarios/registro
@@ -47,14 +50,16 @@ public class UsuarioController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-
         try {
-            Usuario usuario = usuarioService.login(
+            Usuario usuario = usuarioService.login( //busca al usuario en la db, comprueba contraseña y devuelve usuario
                     request.getEmail(),
                     request.getPassword()
             );
+            //si todo va ok, genera el token y devuelve el usuario con el token como atributo
+            String token = jwtService.generarToken(usuario.getEmail());
 
-            UsuarioResponse response = new UsuarioResponse(
+            LoginResponse response = new LoginResponse(
+                    token,
                     usuario.getId(),
                     usuario.getNombre(),
                     usuario.getEmail()
@@ -66,5 +71,4 @@ public class UsuarioController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 }
