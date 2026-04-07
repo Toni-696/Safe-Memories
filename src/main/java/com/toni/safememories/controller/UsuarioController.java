@@ -1,5 +1,6 @@
 package com.toni.safememories.controller;
 
+import com.toni.safememories.dto.LoginRequest;
 import com.toni.safememories.dto.UsuarioResponse;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.service.UsuarioService;
@@ -41,6 +42,28 @@ public class UsuarioController {
 
             //si falla Service lanza la excepcion, HTTP 400 (badRequest)
             return  ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+
+        try {
+            Usuario usuario = usuarioService.login(
+                    request.getEmail(),
+                    request.getPassword()
+            );
+
+            UsuarioResponse response = new UsuarioResponse(
+                    usuario.getId(),
+                    usuario.getNombre(),
+                    usuario.getEmail()
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
