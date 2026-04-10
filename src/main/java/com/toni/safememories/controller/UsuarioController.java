@@ -1,6 +1,6 @@
 package com.toni.safememories.controller;
 
-import com.toni.safememories.Security.JwtService;
+import com.toni.safememories.security.JwtService;
 import com.toni.safememories.dto.LoginRequest;
 import com.toni.safememories.dto.LoginResponse;
 import com.toni.safememories.dto.UsuarioResponse;

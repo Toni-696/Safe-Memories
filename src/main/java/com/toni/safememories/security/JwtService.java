@@ -1,4 +1,4 @@
-package com.toni.safememories.Security;
+package com.toni.safememories.security;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -33,5 +33,19 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // caduca en 1h
                 .signWith(secretKey) //se firma con la clave secreta
                 .compact(); // lo convierte en el texto final del token
+    }
+
+    public String extraerEmail(String token) { //le pasamos el token y devuelve el email que se guardó dentro
+        return Jwts.parser()//perpara la herramienta para leer el token
+                .verifyWith(secretKey)//usa la clave secreta para comprobar que el token es auténtico
+                .build()
+                .parseSignedClaims(token)//abre el token y lee su contenido
+                .getPayload()//dame la parte del token donde están los datos
+                .getSubject(); //dame el email del token
+    }
+
+    public boolean tokenValido(String token, String email) { //comprueba que el token pertenece a ese usuario
+        String emailToken = extraerEmail(token);
+        return emailToken.equals(email);
     }
 }
