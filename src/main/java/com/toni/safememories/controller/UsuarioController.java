@@ -7,10 +7,7 @@ import com.toni.safememories.dto.UsuarioResponse;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 //esta es la capa que recibe peticiones HTTP
 @RestController //Significa que devuelve JSON directamente
@@ -70,5 +67,10 @@ public class UsuarioController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @GetMapping("/perfil")
+    public ResponseEntity<String> perfil() {
+        System.out.println("He entrado en /usuarios/perfil");
+        return ResponseEntity.ok("Acceso permitido con JWT");
     }
 }
