@@ -10,5 +10,4 @@ public class ArchivoRequest {//este dto reicbe los datos necesarios para crear u
     private String ruta;
     private String tipo;
     private Long tamano;
-    private String emailUsuario;
-}
+    }

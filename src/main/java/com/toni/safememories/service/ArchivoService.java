@@ -20,12 +20,11 @@ public class ArchivoService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public Archivo crearArchivo(ArchivoRequest request) {
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmailUsuario())
+    public Archivo crearArchivo(ArchivoRequest request, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)//saco el email del usuario autenticado (seguridad)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        //primero busco el usuario al que pertenece el archivo
 
-        Archivo archivo = Archivo.builder()//con builder creo el obj Archivo con todos sus datos
+        Archivo archivo = Archivo.builder()//construyo el objeto Archivo
                 .nombreOriginal(request.getNombreOriginal())
                 .nombreGuardado(request.getNombreGuardado())
                 .ruta(request.getRuta())
@@ -34,7 +33,7 @@ public class ArchivoService {
                 .usuario(usuario)
                 .build();
 
-        return archivoRepository.save(archivo);// lo guardo
+        return archivoRepository.save(archivo);//guardo el archivo
     }
     public List<Archivo> obtenerArchivosDeUsuario(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
