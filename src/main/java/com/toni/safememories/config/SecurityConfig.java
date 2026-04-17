@@ -1,5 +1,6 @@
 package com.toni.safememories.config;
 
+import com.toni.safememories.security.JwtAuthenticationEntryPoint;
 import com.toni.safememories.security.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -22,10 +24,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    public SecurityConfig(JwtFilter jwtFilter) {//para usar mi filtro JWT dentro de la configuración
+    public SecurityConfig(JwtFilter jwtFilter, JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
         this.jwtFilter = jwtFilter;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
     }
+
 
     @Bean // esta etiqueta le dice a Spring crea un objeto de este tipo y guárdalo para poder usarlo en otras clases
     public PasswordEncoder passwordEncoder() {// con BCrypt la contraseña se guarda en la DB cifrada
@@ -41,12 +46,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) //desactiva una protección que Spring usa mucho con formularios web
+                .csrf(csrf -> csrf.disable())//desactiva una seguridad de Spring que se suele usar en formularios
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                //exceptionHandling es el que va a manejar los fallos de autenticación
                 .authorizeHttpRequests(auth -> auth
-                        //cualquiera puede entrar a Post/usuarios/registro y /login
-                        .requestMatchers(HttpMethod.POST, "/usuarios/registro").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/usuarios/login").permitAll()
-                        .anyRequest().authenticated()//el resto necesita autenticación
+                        .requestMatchers("/usuarios/registro", "/usuarios/login").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())//no se va a usar, es el
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);//antes del filtro normal de usuario/contraseña,
