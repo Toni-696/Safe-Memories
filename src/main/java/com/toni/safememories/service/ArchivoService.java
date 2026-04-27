@@ -204,4 +204,24 @@ public class ArchivoService {
                 .map(PermisoDescarga::getArchivo)
                 .toList();
     }
+    public void revocarPermisoDescarga(Long idArchivo, String emailPropietario, String emailUsuarioAutorizado) {
+        Usuario propietario = usuarioRepository.findByEmail(emailPropietario)
+                .orElseThrow(() -> new RuntimeException("Propietario no encontrado"));
+
+        Usuario usuarioAutorizado = usuarioRepository.findByEmail(emailUsuarioAutorizado)
+                .orElseThrow(() -> new RuntimeException("Usuario autorizado no encontrado"));
+
+        Archivo archivo = archivoRepository.findById(idArchivo)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        if (archivo.getUsuario().getId() != propietario.getId()) {
+            throw new RuntimeException("No tienes permiso para modificar este archivo");
+        }
+
+        PermisoDescarga permiso = permisoDescargaRepository
+                .findByArchivoAndUsuarioAutorizado(archivo, usuarioAutorizado)
+                .orElseThrow(() -> new RuntimeException("Este usuario no tenía permiso sobre este archivo"));
+
+        permisoDescargaRepository.delete(permiso);
+    }
 }

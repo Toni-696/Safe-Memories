@@ -228,4 +228,23 @@ public class ArchivoController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    @DeleteMapping("/{id}/permisos-descarga")
+    public ResponseEntity<?> revocarPermisoDescarga(@PathVariable Long id,
+                                                    @RequestBody PermisoDescargaRequest request,
+                                                    Authentication authentication) {
+        try {
+            String emailPropietario = authentication.getName();
+
+            archivoService.revocarPermisoDescarga(
+                    id,
+                    emailPropietario,
+                    request.getEmailUsuarioAutorizado()
+            );
+
+            return ResponseEntity.ok(Map.of("mensaje", "Permiso de descarga revocado correctamente"));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
