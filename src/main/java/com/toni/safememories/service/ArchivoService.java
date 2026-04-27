@@ -2,8 +2,10 @@ package com.toni.safememories.service;
 
 import com.toni.safememories.dto.ArchivoRequest;
 import com.toni.safememories.entity.Archivo;
+import com.toni.safememories.entity.PermisoDescarga;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.repository.ArchivoRepository;
+import com.toni.safememories.repository.PermisoDescargaRepository;
 import com.toni.safememories.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,10 +19,14 @@ public class ArchivoService {
 
     private final ArchivoRepository archivoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PermisoDescargaRepository permisoDescargaRepository;
 
-    public ArchivoService(ArchivoRepository archivoRepository, UsuarioRepository usuarioRepository) {
+    public ArchivoService(ArchivoRepository archivoRepository,
+                          UsuarioRepository usuarioRepository,
+                          PermisoDescargaRepository permisoDescargaRepository) {
         this.archivoRepository = archivoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.permisoDescargaRepository = permisoDescargaRepository;
     }
 
     public Archivo crearArchivo(ArchivoRequest request, String emailUsuario) {
@@ -142,5 +148,60 @@ public class ArchivoService {
         }
 
         archivoRepository.delete(archivo);
+    }
+
+    public void concederPermisoDescarga(Long idArchivo, String emailPropietario, String emailUsuarioAutorizado) {
+        Usuario propietario = usuarioRepository.findByEmail(emailPropietario)
+                .orElseThrow(() -> new RuntimeException("Propietario no encontrado"));
+
+        Usuario usuarioAutorizado = usuarioRepository.findByEmail(emailUsuarioAutorizado)
+                .orElseThrow(() -> new RuntimeException("Usuario autorizado no encontrado"));
+
+        Archivo archivo = archivoRepository.findById(idArchivo)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        if (archivo.getUsuario().getId() != propietario.getId()) {
+            throw new RuntimeException("No tienes permiso para compartir este archivo");
+        }
+
+        if (permisoDescargaRepository.existsByArchivoAndUsuarioAutorizado(archivo, usuarioAutorizado)) {
+            throw new RuntimeException("Este usuario ya tiene permiso para descargar el archivo");
+        }
+
+        PermisoDescarga permiso = PermisoDescarga.builder()
+                .archivo(archivo)
+                .usuarioAutorizado(usuarioAutorizado)
+                .build();
+
+        permisoDescargaRepository.save(permiso);
+    }
+
+    public Archivo obtenerArchivoParaDescarga(Long idArchivo, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Archivo archivo = archivoRepository.findById(idArchivo)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        boolean esPropietario = archivo.getUsuario().getId() == usuario.getId();
+
+        boolean tienePermiso = permisoDescargaRepository
+                .existsByArchivoAndUsuarioAutorizado(archivo, usuario);
+
+        if (!esPropietario && !tienePermiso) {
+            throw new RuntimeException("No tienes permiso para descargar este archivo");
+        }
+
+        return archivo;
+    }
+    public List<Archivo> obtenerArchivosCompartidosConmigo(String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        List<PermisoDescarga> permisos = permisoDescargaRepository.findByUsuarioAutorizado(usuario);
+
+        return permisos.stream()
+                .map(PermisoDescarga::getArchivo)
+                .toList();
     }
 }

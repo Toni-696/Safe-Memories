@@ -2,6 +2,7 @@ package com.toni.safememories.controller;
 
 import com.toni.safememories.dto.ArchivoRequest;
 import com.toni.safememories.dto.ArchivoResponse;
+import com.toni.safememories.dto.PermisoDescargaRequest;
 import com.toni.safememories.entity.Archivo;
 import com.toni.safememories.service.ArchivoService;
 import org.springframework.http.ResponseEntity;
@@ -147,6 +148,81 @@ public class ArchivoController {
             archivoService.borrarArchivo(id, email);
 
             return ResponseEntity.ok(Map.of("mensaje", "Archivo borrado correctamente"));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    @GetMapping("/descargar/{id}")
+    public ResponseEntity<?> descargarArchivo(@PathVariable Long id, Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            Archivo archivo = archivoService.obtenerArchivoParaDescarga(id, email);
+
+            Path rutaArchivo = Paths.get(
+                    System.getProperty("user.dir"),
+                    "uploads",
+                    archivo.getNombreGuardado()
+            );
+
+            Resource recurso = new UrlResource(rutaArchivo.toUri());
+            //toURI convierte la ruta del archivo en una URI (forma standard de identificar un recurso)
+
+            if (!recurso.exists() || !recurso.isReadable()) {
+                throw new RuntimeException("No se puede leer el archivo");
+            }
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + archivo.getNombreOriginal() + "\"")
+                    //attachment para descargar el archivo, y filename para guardarlo con el nombre que se le pasa
+                    .header(HttpHeaders.CONTENT_TYPE, archivo.getTipo())
+                    .body(recurso);//aqui se envía el archivo real
+
+        } catch (MalformedURLException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Ruta del archivo no válida"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    @PostMapping("/{id}/permisos-descarga")
+    public ResponseEntity<?> concederPermisoDescarga(@PathVariable Long id,
+                                                     @RequestBody PermisoDescargaRequest request,
+                                                     Authentication authentication) {
+        try {
+            String emailPropietario = authentication.getName();
+
+            archivoService.concederPermisoDescarga(
+                    id,
+                    emailPropietario,
+                    request.getEmailUsuarioAutorizado()
+            );
+
+            return ResponseEntity.ok(Map.of("mensaje", "Permiso de descarga concedido correctamente"));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    @GetMapping("/compartidos")
+    public ResponseEntity<?> obtenerArchivosCompartidos(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            List<Archivo> archivos = archivoService.obtenerArchivosCompartidosConmigo(email);
+
+            List<ArchivoResponse> response = archivos.stream()
+                    .map(archivo -> new ArchivoResponse(
+                            archivo.getId(),
+                            archivo.getNombreOriginal(),
+                            archivo.getTipo(),
+                            archivo.getTamano(),
+                            archivo.getRuta(),
+                            archivo.getUsuario().getEmail()
+                    ))
+                    .toList();
+
+            return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
