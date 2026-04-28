@@ -2,9 +2,11 @@ package com.toni.safememories.service;
 
 import com.toni.safememories.dto.ArchivoRequest;
 import com.toni.safememories.entity.Archivo;
+import com.toni.safememories.entity.Carpeta;
 import com.toni.safememories.entity.PermisoDescarga;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.repository.ArchivoRepository;
+import com.toni.safememories.repository.CarpetaRepository;
 import com.toni.safememories.repository.PermisoDescargaRepository;
 import com.toni.safememories.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
@@ -20,13 +22,16 @@ public class ArchivoService {
     private final ArchivoRepository archivoRepository;
     private final UsuarioRepository usuarioRepository;
     private final PermisoDescargaRepository permisoDescargaRepository;
+    private final CarpetaRepository carpetaRepository;
 
     public ArchivoService(ArchivoRepository archivoRepository,
                           UsuarioRepository usuarioRepository,
-                          PermisoDescargaRepository permisoDescargaRepository) {
+                          PermisoDescargaRepository permisoDescargaRepository,
+                          CarpetaRepository carpetaRepository) {
         this.archivoRepository = archivoRepository;
         this.usuarioRepository = usuarioRepository;
         this.permisoDescargaRepository = permisoDescargaRepository;
+        this.carpetaRepository = carpetaRepository;
     }
 
     public Archivo crearArchivo(ArchivoRequest request, String emailUsuario) {
@@ -52,7 +57,7 @@ public class ArchivoService {
         return archivoRepository.findByUsuario(usuario);
     }
 
-    public Archivo subirArchivo(MultipartFile archivo, String emailUsuario) throws Exception {
+    public Archivo subirArchivo(MultipartFile archivo, String emailUsuario, Long carpetaId) throws Exception {
         if (archivo.isEmpty()) {
             throw new RuntimeException("El archivo está vacío");
         }
@@ -73,6 +78,17 @@ public class ArchivoService {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        Carpeta carpeta = null;
+
+        if (carpetaId != null) {
+            carpeta = carpetaRepository.findById(carpetaId)
+                    .orElseThrow(() -> new RuntimeException("Carpeta no encontrada"));
+
+            if (carpeta.getUsuario().getId() != usuario.getId()) {
+                throw new RuntimeException("No tienes permiso para usar esta carpeta");
+            }
+        }
+
         String nombreOriginal = archivo.getOriginalFilename();
         Long tamano = archivo.getSize();
 
@@ -85,10 +101,10 @@ public class ArchivoService {
         String nombreGuardado = UUID.randomUUID().toString() + extension;//genera UUID aleatorio y le añade la extensión
 
         String carpetaUploads = System.getProperty("user.dir") + File.separator + "uploads";
-        File carpeta = new File(carpetaUploads);
+        File directorioUploads = new File(carpetaUploads);
 
-        if (!carpeta.exists()) {
-            carpeta.mkdirs();
+        if (!directorioUploads.exists()) {
+            directorioUploads.mkdirs();
         }
 
         String rutaCompleta = carpetaUploads + File.separator + nombreGuardado;
@@ -105,6 +121,7 @@ public class ArchivoService {
                 .tipo(tipo)
                 .tamano(tamano)
                 .usuario(usuario)
+                .carpeta(carpeta)
                 .build();
 
         return archivoRepository.save(nuevoArchivo);

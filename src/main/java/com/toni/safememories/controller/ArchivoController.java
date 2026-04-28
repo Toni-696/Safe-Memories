@@ -85,13 +85,14 @@ public class ArchivoController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @PostMapping("/subir") //@RequestParam("archivo") espera recibir un archivo en un campo llamado archivo
+    @PostMapping("/subir")
     public ResponseEntity<?> subirArchivo(@RequestParam("archivo") MultipartFile archivo,
+                                          @RequestParam(required = false) Long carpetaId,//puede venir un parámetro carpeta o no
                                           Authentication authentication) {
         try {
             String email = authentication.getName();
 
-            Archivo nuevoArchivo = archivoService.subirArchivo(archivo, email);
+            Archivo nuevoArchivo = archivoService.subirArchivo(archivo, email, carpetaId);
 
             ArchivoResponse response = new ArchivoResponse(
                     nuevoArchivo.getId(),

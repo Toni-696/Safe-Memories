@@ -40,4 +40,8 @@ public class Archivo {
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
+
+    @ManyToOne
+    @JoinColumn(name = "carpeta_id") // no es nullable=false para permitir subir archivos sin carpeta
+    private Carpeta carpeta;
 }
