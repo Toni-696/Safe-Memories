@@ -62,4 +62,46 @@ public class CarpetaService {
 
         return archivoRepository.findByCarpeta(carpeta);
     }
+        //UPDATE para cambiar el nombre de la carpeta
+    public Carpeta renombrarCarpeta(Long carpetaId, CarpetaRequest request, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Carpeta carpeta = carpetaRepository.findById(carpetaId)
+                .orElseThrow(() -> new RuntimeException("Carpeta no encontrada"));
+
+        if (carpeta.getUsuario().getId() != usuario.getId()) {
+            throw new RuntimeException("No tienes permiso para modificar esta carpeta");
+        }
+
+        if (carpetaRepository.existsByNombreAndUsuario(request.getNombre(), usuario)) {
+            throw new RuntimeException("Ya existe una carpeta con ese nombre");
+        }
+
+        carpeta.setNombre(request.getNombre());
+
+        return carpetaRepository.save(carpeta);
+    }
+
+    public void borrarCarpeta(Long carpetaId, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Carpeta carpeta = carpetaRepository.findById(carpetaId)
+                .orElseThrow(() -> new RuntimeException("Carpeta no encontrada"));
+
+        if (carpeta.getUsuario().getId() != usuario.getId()) {
+            throw new RuntimeException("No tienes permiso para borrar esta carpeta");
+        }
+
+        List<Archivo> archivos = archivoRepository.findByCarpeta(carpeta);
+
+        for (Archivo archivo : archivos) {
+            archivo.setCarpeta(null);
+        }
+
+        archivoRepository.saveAll(archivos);
+
+        carpetaRepository.delete(carpeta);
+    }
 }

@@ -11,4 +11,5 @@ public interface ArchivoRepository extends JpaRepository<Archivo, Long> {
 
     List<Archivo> findByUsuario(Usuario usuario);
     List<Archivo> findByCarpeta(Carpeta carpeta);
+
 }

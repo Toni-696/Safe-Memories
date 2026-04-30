@@ -5,6 +5,7 @@ import com.toni.safememories.dto.ArchivoResponse;
 import com.toni.safememories.dto.PermisoDescargaRequest;
 import com.toni.safememories.entity.Archivo;
 import com.toni.safememories.service.ArchivoService;
+import com.toni.safememories.dto.ArchivoUpdateRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -243,6 +244,34 @@ public class ArchivoController {
             );
 
             return ResponseEntity.ok(Map.of("mensaje", "Permiso de descarga revocado correctamente"));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> renombrarArchivo(@PathVariable Long id,
+                                              @RequestBody ArchivoUpdateRequest request,
+                                              Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            Archivo archivo = archivoService.renombrarArchivo(
+                    id,
+                    request.getNombreOriginal(),
+                    email
+            );
+
+            ArchivoResponse response = new ArchivoResponse(
+                    archivo.getId(),
+                    archivo.getNombreOriginal(),
+                    archivo.getTipo(),
+                    archivo.getTamano(),
+                    archivo.getRuta(),
+                    archivo.getUsuario().getEmail()
+            );
+
+            return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

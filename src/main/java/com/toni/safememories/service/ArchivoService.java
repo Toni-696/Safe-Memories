@@ -241,4 +241,20 @@ public class ArchivoService {
 
         permisoDescargaRepository.delete(permiso);
     }
+    //UPDATE
+    public Archivo renombrarArchivo(Long idArchivo, String nuevoNombre, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Archivo archivo = archivoRepository.findById(idArchivo)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        if (archivo.getUsuario().getId() != usuario.getId()) {
+            throw new RuntimeException("No tienes permiso para modificar este archivo");
+        }
+
+        archivo.setNombreOriginal(nuevoNombre);
+
+        return archivoRepository.save(archivo);
+    }
 }

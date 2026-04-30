@@ -9,6 +9,9 @@ import com.toni.safememories.service.CarpetaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.List;
 import java.util.Map;
@@ -86,6 +89,43 @@ public class CarpetaController {
                     .toList();
 
             return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> renombrarCarpeta(@PathVariable Long id,
+                                              @RequestBody CarpetaRequest request,
+                                              Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            Carpeta carpeta = carpetaService.renombrarCarpeta(id, request, email);
+
+            CarpetaResponse response = new CarpetaResponse(
+                    carpeta.getId(),
+                    carpeta.getNombre(),
+                    carpeta.getFechaCreacion()
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> borrarCarpeta(@PathVariable Long id,
+                                           Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            carpetaService.borrarCarpeta(id, email);
+
+            return ResponseEntity.ok(Map.of("mensaje", "Carpeta borrada correctamente"));
 
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
