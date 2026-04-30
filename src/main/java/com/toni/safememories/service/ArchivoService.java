@@ -257,4 +257,31 @@ public class ArchivoService {
 
         return archivoRepository.save(archivo);
     }
+
+    public Archivo moverArchivo(Long idArchivo, Long carpetaId, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Archivo archivo = archivoRepository.findById(idArchivo)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        if (archivo.getUsuario().getId() != usuario.getId()) {
+            throw new RuntimeException("No tienes permiso para mover este archivo");
+        }
+
+        Carpeta carpetaDestino = null;
+
+        if (carpetaId != null) {
+            carpetaDestino = carpetaRepository.findById(carpetaId)
+                    .orElseThrow(() -> new RuntimeException("Carpeta destino no encontrada"));
+
+            if (carpetaDestino.getUsuario().getId() != usuario.getId()) {
+                throw new RuntimeException("No tienes permiso para mover el archivo a esta carpeta");
+            }
+        }
+
+        archivo.setCarpeta(carpetaDestino);
+
+        return archivoRepository.save(archivo);
+    }
 }

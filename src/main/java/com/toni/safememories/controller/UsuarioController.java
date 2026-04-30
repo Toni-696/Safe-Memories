@@ -1,13 +1,15 @@
 package com.toni.safememories.controller;
 
+import com.toni.safememories.dto.*;
 import com.toni.safememories.security.JwtService;
-import com.toni.safememories.dto.LoginRequest;
-import com.toni.safememories.dto.LoginResponse;
-import com.toni.safememories.dto.UsuarioResponse;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.service.UsuarioService;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 //esta es la capa que recibe peticiones HTTP
 @RestController //Significa que devuelve JSON directamente
@@ -73,4 +75,40 @@ public class UsuarioController {
         System.out.println("He entrado en /usuarios/perfil");
         return ResponseEntity.ok("Acceso permitido con JWT");
     }
+    @PutMapping("/perfil")
+    public ResponseEntity<?> actualizarPerfil(@RequestBody UsuarioUpdateRequest request,
+                                              Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            Usuario usuario = usuarioService.actualizarPerfil(email, request);
+
+            UsuarioResponse response = new UsuarioResponse(
+                    usuario.getId(),
+                    usuario.getNombre(),
+                    usuario.getEmail()
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<?> cambiarPassword(@RequestBody CambiarPasswordRequest request,
+                                             Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            usuarioService.cambiarPassword(email, request);
+
+            return ResponseEntity.ok(Map.of("mensaje", "Contraseña actualizada correctamente"));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
 }

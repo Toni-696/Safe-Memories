@@ -6,6 +6,7 @@ import com.toni.safememories.dto.PermisoDescargaRequest;
 import com.toni.safememories.entity.Archivo;
 import com.toni.safememories.service.ArchivoService;
 import com.toni.safememories.dto.ArchivoUpdateRequest;
+import com.toni.safememories.dto.MoverArchivoRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -259,6 +260,35 @@ public class ArchivoController {
             Archivo archivo = archivoService.renombrarArchivo(
                     id,
                     request.getNombreOriginal(),
+                    email
+            );
+
+            ArchivoResponse response = new ArchivoResponse(
+                    archivo.getId(),
+                    archivo.getNombreOriginal(),
+                    archivo.getTipo(),
+                    archivo.getTamano(),
+                    archivo.getRuta(),
+                    archivo.getUsuario().getEmail()
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/mover")
+    public ResponseEntity<?> moverArchivo(@PathVariable Long id,
+                                          @RequestBody MoverArchivoRequest request,
+                                          Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            Archivo archivo = archivoService.moverArchivo(
+                    id,
+                    request.getCarpetaId(),
                     email
             );
 

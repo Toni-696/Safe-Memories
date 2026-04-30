@@ -1,5 +1,7 @@
 package com.toni.safememories.service;
 
+import com.toni.safememories.dto.CambiarPasswordRequest;
+import com.toni.safememories.dto.UsuarioUpdateRequest;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -48,5 +50,29 @@ public class UsuarioService {
         }
 
         return usuario;
+    }
+
+    public Usuario actualizarPerfil(String emailUsuario, UsuarioUpdateRequest request) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setNombre(request.getNombre());
+
+        return usuarioRepository.save(usuario);
+    }
+    public void cambiarPassword(String emailUsuario, CambiarPasswordRequest request) {
+
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // comprobar contraseña actual
+        if (!passwordEncoder.matches(request.getPasswordActual(), usuario.getPassword())) {
+            throw new RuntimeException("La contraseña actual es incorrecta");
+        }
+
+        // actualizar nueva contraseña
+        usuario.setPassword(passwordEncoder.encode(request.getNuevaPassword()));
+
+        usuarioRepository.save(usuario);
     }
 }
