@@ -119,7 +119,7 @@ public class ArchivoController {
         try {
             String email = authentication.getName();
 
-            Archivo archivo = archivoService.obtenerArchivoPorId(id, email);
+            Archivo archivo = archivoService.obtenerArchivoParaDescarga(id, email);
 
             String nombreGuardado = archivo.getNombreGuardado();
             Path rutaArchivo = Paths.get(System.getProperty("user.dir"), "uploads", nombreGuardado);
