@@ -5,10 +5,7 @@ import com.toni.safememories.entity.Archivo;
 import com.toni.safememories.entity.Carpeta;
 import com.toni.safememories.entity.PermisoDescarga;
 import com.toni.safememories.entity.Usuario;
-import com.toni.safememories.repository.ArchivoRepository;
-import com.toni.safememories.repository.CarpetaRepository;
-import com.toni.safememories.repository.PermisoDescargaRepository;
-import com.toni.safememories.repository.UsuarioRepository;
+import com.toni.safememories.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,15 +20,18 @@ public class ArchivoService {
     private final UsuarioRepository usuarioRepository;
     private final PermisoDescargaRepository permisoDescargaRepository;
     private final CarpetaRepository carpetaRepository;
+    private final PermisoCarpetaRepository permisoCarpetaRepository;
 
     public ArchivoService(ArchivoRepository archivoRepository,
                           UsuarioRepository usuarioRepository,
                           PermisoDescargaRepository permisoDescargaRepository,
-                          CarpetaRepository carpetaRepository) {
+                          CarpetaRepository carpetaRepository,
+                          PermisoCarpetaRepository permisoCarpetaRepository) {
         this.archivoRepository = archivoRepository;
         this.usuarioRepository = usuarioRepository;
         this.permisoDescargaRepository = permisoDescargaRepository;
         this.carpetaRepository = carpetaRepository;
+        this.permisoCarpetaRepository = permisoCarpetaRepository;
     }
 
     public Archivo crearArchivo(ArchivoRequest request, String emailUsuario) {
@@ -283,5 +283,30 @@ public class ArchivoService {
         archivo.setCarpeta(carpetaDestino);
 
         return archivoRepository.save(archivo);
+    }
+    public Archivo obtenerArchivoParaVisualizar(Long idArchivo, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Archivo archivo = archivoRepository.findById(idArchivo)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        boolean esPropietario = archivo.getUsuario().getId() == usuario.getId();
+
+        boolean tienePermisoDescarga = permisoDescargaRepository
+                .existsByArchivoAndUsuarioAutorizado(archivo, usuario);
+
+        boolean tienePermisoCarpeta = false;
+
+        if (archivo.getCarpeta() != null) {
+            tienePermisoCarpeta = permisoCarpetaRepository
+                    .existsByCarpetaAndUsuarioAutorizado(archivo.getCarpeta(), usuario);
+        }
+
+        if (!esPropietario && !tienePermisoDescarga && !tienePermisoCarpeta) {
+            throw new RuntimeException("No tienes permiso para ver este archivo");
+        }
+
+        return archivo;
     }
 }

@@ -131,4 +131,78 @@ public class CarpetaController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    @PostMapping("/{id}/compartir")
+    public ResponseEntity<?> compartirCarpeta(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            Authentication authentication
+    ) {
+
+        try {
+
+            String emailPropietario = authentication.getName();
+
+            carpetaService.compartirCarpeta(
+                    id,
+                    emailPropietario,
+                    body.get("email")
+            );
+
+            return ResponseEntity.ok(
+                    Map.of("mensaje", "Carpeta compartida correctamente")
+            );
+
+        } catch (RuntimeException e) {
+
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", e.getMessage())
+            );
+        }
+    }
+    @GetMapping("/compartidas")
+    public ResponseEntity<?> obtenerCarpetasCompartidas(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            List<Carpeta> carpetas = carpetaService.obtenerCarpetasCompartidasConmigo(email);
+
+            List<CarpetaResponse> response = carpetas.stream()
+                    .map(carpeta -> new CarpetaResponse(
+                            carpeta.getId(),
+                            carpeta.getNombre(),
+                            carpeta.getFechaCreacion()
+                    ))
+                    .toList();
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    @GetMapping("/compartidas/{id}/archivos")
+    public ResponseEntity<?> obtenerArchivosDeCarpetaCompartida(@PathVariable Long id,
+                                                                Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            List<Archivo> archivos = carpetaService.obtenerArchivosDeCarpetaCompartida(id, email);
+
+            List<ArchivoResponse> response = archivos.stream()
+                    .map(archivo -> new ArchivoResponse(
+                            archivo.getId(),
+                            archivo.getNombreOriginal(),
+                            archivo.getTipo(),
+                            archivo.getTamano(),
+                            archivo.getRuta(),
+                            archivo.getUsuario().getEmail()
+                    ))
+                    .toList();
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
