@@ -7,8 +7,9 @@ import com.toni.safememories.entity.PermisoDescarga;
 import com.toni.safememories.entity.Usuario;
 import com.toni.safememories.repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
+import com.toni.safememories.repository.SolicitudDescargaRepository;
 import java.io.File;
 import java.util.List;
 import java.util.UUID;
@@ -21,17 +22,20 @@ public class ArchivoService {
     private final PermisoDescargaRepository permisoDescargaRepository;
     private final CarpetaRepository carpetaRepository;
     private final PermisoCarpetaRepository permisoCarpetaRepository;
+    private final SolicitudDescargaRepository solicitudDescargaRepository;
 
     public ArchivoService(ArchivoRepository archivoRepository,
                           UsuarioRepository usuarioRepository,
                           PermisoDescargaRepository permisoDescargaRepository,
                           CarpetaRepository carpetaRepository,
-                          PermisoCarpetaRepository permisoCarpetaRepository) {
+                          PermisoCarpetaRepository permisoCarpetaRepository,
+                          SolicitudDescargaRepository solicitudDescargaRepository) {
         this.archivoRepository = archivoRepository;
         this.usuarioRepository = usuarioRepository;
         this.permisoDescargaRepository = permisoDescargaRepository;
         this.carpetaRepository = carpetaRepository;
         this.permisoCarpetaRepository = permisoCarpetaRepository;
+        this.solicitudDescargaRepository = solicitudDescargaRepository;
     }
 
     public Archivo crearArchivo(ArchivoRequest request, String emailUsuario) {
@@ -140,7 +144,7 @@ public class ArchivoService {
 
         return archivo;
     }
-
+    @Transactional
     public void borrarArchivo(Long idArchivo, String emailUsuario) {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -163,7 +167,8 @@ public class ArchivoService {
         if (fichero.exists()) {
             fichero.delete();
         }
-
+        permisoDescargaRepository.deleteByArchivo(archivo);
+        solicitudDescargaRepository.deleteRelacionesArchivo(archivo.getId());
         archivoRepository.delete(archivo);
     }
 

@@ -107,4 +107,35 @@ public class SolicitudDescargaController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @GetMapping("/enviadas")
+    public ResponseEntity<?> obtenerSolicitudesEnviadas(Authentication authentication) {
+        try {
+            String emailSolicitante = authentication.getName();
+
+            List<SolicitudDescarga> solicitudes =
+                    solicitudDescargaService.obtenerSolicitudesEnviadas(emailSolicitante);
+
+            List<Map<String, Object>> response = solicitudes.stream()
+                    .map(solicitud -> Map.<String, Object>of(
+                            "id", solicitud.getId(),
+                            "estado", solicitud.getEstado().name(),
+                            "fechaSolicitud", solicitud.getFechaSolicitud(),
+                            "propietario", solicitud.getUsuarioPropietario().getEmail(),
+                            "archivos", solicitud.getArchivos().stream()
+                                    .map(archivo -> Map.of(
+                                            "id", archivo.getId(),
+                                            "nombreOriginal", archivo.getNombreOriginal(),
+                                            "tipo", archivo.getTipo()
+                                    ))
+                                    .toList()
+                    ))
+                    .toList();
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

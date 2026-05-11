@@ -127,4 +127,10 @@ public class SolicitudDescargaService {
 
         return solicitudDescargaRepository.save(solicitud);
     }
+    public List<SolicitudDescarga> obtenerSolicitudesEnviadas(String emailSolicitante) {
+        Usuario solicitante = usuarioRepository.findByEmail(emailSolicitante)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        return solicitudDescargaRepository.findByUsuarioSolicitanteConArchivos(solicitante);
+    }
 }

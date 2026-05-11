@@ -15,4 +15,6 @@ public interface PermisoDescargaRepository extends JpaRepository<PermisoDescarga
     List<PermisoDescarga> findByUsuarioAutorizado(Usuario usuarioAutorizado);
 
     Optional<PermisoDescarga> findByArchivoAndUsuarioAutorizado(Archivo archivo, Usuario usuarioAutorizado);
+
+    void deleteByArchivo(Archivo archivo);
 }
