@@ -111,4 +111,22 @@ public class UsuarioController {
         }
     }
 
+    @DeleteMapping("/perfil")
+    public ResponseEntity<?> darDeBaja(Authentication authentication) {
+        try {
+            String email = authentication.getName();
+
+            usuarioService.darDeBajaUsuario(email);
+
+            return ResponseEntity.ok(Map.of(
+                    "mensaje", "Cuenta desactivada correctamente"
+            ));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        }
+    }
+
 }

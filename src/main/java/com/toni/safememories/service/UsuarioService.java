@@ -43,6 +43,10 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada");
+        }
+
         if (!passwordEncoder.matches(password, usuario.getPassword())) { // compara la contraseña
             // matches compara con el hash de la cifrada ambas, y devuelve true o false
             // password es la que escribe el usuario, usuario.getPassword es almacenada encriptada
@@ -72,6 +76,15 @@ public class UsuarioService {
 
         // actualizar nueva contraseña
         usuario.setPassword(passwordEncoder.encode(request.getNuevaPassword()));
+
+        usuarioRepository.save(usuario);
+    }
+
+    public void darDeBajaUsuario(String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setActivo(false);
 
         usuarioRepository.save(usuario);
     }
